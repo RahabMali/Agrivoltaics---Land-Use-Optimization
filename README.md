@@ -38,6 +38,11 @@ This smart contract enables efficient land use optimization by managing:
 - Real-time balance management
 - Secure withdrawal system
 
+### 🔄 Lease Renewal
+- Extend active lease durations seamlessly
+- Preserve all existing lease terms
+- Enable long-term operational planning
+
 ## 🛠️ Usage Instructions
 
 ### Setting Up
@@ -80,6 +85,12 @@ This smart contract enables efficient land use optimization by managing:
 
 ;; Distribute revenue according to lease terms
 (contract-call? .agrivoltaics distribute-revenue u1) ;; lease-id
+
+;; Renew lease before expiration
+(contract-call? .agrivoltaics renew-lease
+  u1      ;; lease-id
+  u26280  ;; ~6 months extension in blocks
+)
 ```
 
 ### For Yield Token Trading 📈
@@ -107,6 +118,7 @@ This smart contract enables efficient land use optimization by managing:
 - `add-revenue` - Record income from operations
 - `distribute-revenue` - Share revenue per lease terms
 - `terminate-lease` - End lease agreements early
+- `renew-lease` - Extend lease duration
 - `withdraw-balance` - Withdraw earned funds
 - `deposit-balance` - Add funds to account
 

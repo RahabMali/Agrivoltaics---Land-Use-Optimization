@@ -226,6 +226,17 @@
   )
 )
 
+(define-public (renew-lease (lease-id uint) (extension-blocks uint))
+  (let ((lease (unwrap! (map-get? leases { lease-id: lease-id }) err-not-found)))
+    (asserts! (is-eq tx-sender (get lessee lease)) err-unauthorized)
+    (asserts! (get is-active lease) err-lease-expired)
+    (asserts! (<= stacks-block-height (get end-block lease)) err-lease-expired)
+    (asserts! (> extension-blocks u0) err-invalid-amount)
+    (map-set leases { lease-id: lease-id } (merge lease { end-block: (+ (get end-block lease) extension-blocks) }))
+    (ok true)
+  )
+)
+
 (define-public (withdraw-balance (amount uint))
   (let ((user-balance (default-to u0 (get balance (map-get? user-balances { user: tx-sender })))))
     (asserts! (>= user-balance amount) err-insufficient-balance)
