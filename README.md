@@ -38,6 +38,12 @@ This smart contract enables efficient land use optimization by managing:
 - Real-time balance management
 - Secure withdrawal system
 
+### 🏠 Land Ownership Transfer
+- Seamless transfer of land ownership between principals
+- Maintains all existing land data and associations
+- Enables flexible land trading and inheritance
+- Owner-only authorization for security
+
 ### 🔄 Lease Renewal
 - Extend active lease durations seamlessly
 - Preserve all existing lease terms
@@ -121,6 +127,7 @@ This smart contract enables efficient land use optimization by managing:
 - `renew-lease` - Extend lease duration
 - `withdraw-balance` - Withdraw earned funds
 - `deposit-balance` - Add funds to account
+- `transfer-land-ownership` - Transfer land ownership to new principal
 
 ### Read-Only Functions  
 - `get-land-info` - View land details

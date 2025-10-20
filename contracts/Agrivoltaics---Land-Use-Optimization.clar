@@ -254,6 +254,14 @@
   )
 )
 
+(define-public (transfer-land-ownership (land-id uint) (new-owner principal))
+  (let ((land (unwrap! (map-get? lands { land-id: land-id }) err-not-found)))
+    (asserts! (is-eq tx-sender (get owner land)) err-unauthorized)
+    (map-set lands { land-id: land-id } (merge land { owner: new-owner }))
+    (ok true)
+  )
+)
+
 (define-read-only (get-land-info (land-id uint))
   (map-get? lands { land-id: land-id })
 )
