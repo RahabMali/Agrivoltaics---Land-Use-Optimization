@@ -43,6 +43,14 @@ This smart contract enables efficient land use optimization by managing:
 - Maintains all existing land data and associations
 - Enables flexible land trading and inheritance
 - Owner-only authorization for security
+### 🛡️ Land Auction System
+- Decentralized land auctions with transparent bidding
+- Time-based auction mechanics with automatic expiration
+- Secure bid placement with balance validation
+- Automatic ownership transfer upon successful auction completion
+- Refund mechanism for outbid participants
+- Enables dynamic land value discovery through market competition
+
 
 ### 🔄 Lease Renewal
 - Extend active lease durations seamlessly
@@ -104,6 +112,26 @@ This smart contract enables efficient land use optimization by managing:
 ```clarity
 ;; Mint yield tokens
 (contract-call? .agrivoltaics mint-yield-token
+### For Land Auctions 🏛️
+
+```clarity
+;; Start an auction for land
+(contract-call? .agrivoltaics start-land-auction
+  u1         ;; land-id
+  u10000     ;; starting price
+  u1440      ;; duration in blocks (~1 day)
+)
+
+;; Place a bid on an auction
+(contract-call? .agrivoltaics place-bid
+  u1         ;; auction-id
+  u15000     ;; bid amount
+)
+
+;; End auction after expiration
+(contract-call? .agrivoltaics end-auction u1) ;; auction-id
+```
+
   u1         ;; land-id
   "solar"    ;; token type
   u100       ;; amount
@@ -120,6 +148,11 @@ This smart contract enables efficient land use optimization by managing:
 - `register-land` - Register new agricultural land
 - `create-lease` - Create lease agreements
 - `mint-yield-token` - Create tokenized yields
+- `start-land-auction` - Initiate auction for land ownership
+- `place-bid` - Submit competitive bids during active auctions
+- `end-auction` - Finalize auction and transfer ownership to winner
+- `get-auction-info` - Retrieve detailed auction status and bids
+
 - `buy-yield-token` - Purchase yield tokens
 - `add-revenue` - Record income from operations
 - `distribute-revenue` - Share revenue per lease terms

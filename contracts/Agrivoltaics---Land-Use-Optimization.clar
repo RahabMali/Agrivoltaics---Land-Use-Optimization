@@ -6,12 +6,17 @@
 (define-constant err-lease-active (err u104))
 (define-constant err-lease-expired (err u105))
 (define-constant err-insufficient-balance (err u106))
+(define-constant err-auction-not-found (err u107))
+(define-constant err-auction-ended (err u108))
+(define-constant err-bid-too-low (err u109))
+(define-constant err-auction-active (err u110))
 
 (define-data-var land-id-nonce uint u0)
 (define-data-var lease-id-nonce uint u0)
 (define-data-var yield-token-supply uint u0)
+(define-data-var auction-id-nonce uint u0)
 
-(define-map lands 
+(define-map lands
   { land-id: uint }
   {
     owner: principal,
@@ -63,6 +68,19 @@
 (define-map user-balances
   { user: principal }
   { balance: uint }
+)
+
+(define-map land-auctions
+  { auction-id: uint }
+  {
+    land-id: uint,
+    seller: principal,
+    starting-price: uint,
+    current-bid: uint,
+    highest-bidder: (optional principal),
+    end-block: uint,
+    is-active: bool
+  }
 )
 
 (define-public (register-land (location (string-ascii 100)) (size-hectares uint) (solar-capacity-kw uint) (crop-type (string-ascii 50)))
@@ -262,6 +280,83 @@
   )
 )
 
+(define-public (start-land-auction (land-id uint) (starting-price uint) (duration-blocks uint))
+  (let
+    (
+      (land (unwrap! (map-get? lands { land-id: land-id }) err-not-found))
+      (new-auction-id (+ (var-get auction-id-nonce) u1))
+      (end-block (+ stacks-block-height duration-blocks))
+    )
+    (asserts! (is-eq tx-sender (get owner land)) err-unauthorized)
+    (asserts! (> starting-price u0) err-invalid-amount)
+    (asserts! (> duration-blocks u0) err-invalid-amount)
+    (map-set land-auctions { auction-id: new-auction-id }
+      {
+        land-id: land-id,
+        seller: tx-sender,
+        starting-price: starting-price,
+        current-bid: u0,
+        highest-bidder: none,
+        end-block: end-block,
+        is-active: true
+      }
+    )
+    (var-set auction-id-nonce new-auction-id)
+    (ok new-auction-id)
+  )
+)
+
+(define-public (place-bid (auction-id uint) (bid-amount uint))
+  (let
+    (
+      (auction (unwrap! (map-get? land-auctions { auction-id: auction-id }) err-auction-not-found))
+      (current-bid (get current-bid auction))
+      (starting-price (get starting-price auction))
+      (bidder-balance (default-to u0 (get balance (map-get? user-balances { user: tx-sender }))))
+    )
+    (asserts! (get is-active auction) err-auction-ended)
+    (asserts! (<= stacks-block-height (get end-block auction)) err-auction-ended)
+    (asserts! (>= bid-amount starting-price) err-bid-too-low)
+    (asserts! (> bid-amount current-bid) err-bid-too-low)
+    (asserts! (>= bidder-balance bid-amount) err-insufficient-balance)
+    (map-set user-balances { user: tx-sender } { balance: (- bidder-balance bid-amount) })
+    (if (> current-bid u0)
+      (map-set user-balances { user: (unwrap! (get highest-bidder auction) err-not-found) }
+        { balance: (+ (default-to u0 (get balance (map-get? user-balances { user: (unwrap! (get highest-bidder auction) err-not-found) }))) current-bid) }
+      )
+      true
+    )
+    (map-set land-auctions { auction-id: auction-id }
+      (merge auction { current-bid: bid-amount, highest-bidder: (some tx-sender) })
+    )
+    (ok true)
+  )
+)
+
+(define-public (end-auction (auction-id uint))
+  (let
+    (
+      (auction (unwrap! (map-get? land-auctions { auction-id: auction-id }) err-auction-not-found))
+      (land-id (get land-id auction))
+      (land (unwrap! (map-get? lands { land-id: land-id }) err-not-found))
+      (highest-bidder (get highest-bidder auction))
+    )
+    (asserts! (get is-active auction) err-auction-ended)
+    (asserts! (> stacks-block-height (get end-block auction)) err-auction-active)
+    (map-set land-auctions { auction-id: auction-id } (merge auction { is-active: false }))
+    (if (is-some highest-bidder)
+      (begin
+        (map-set lands { land-id: land-id } (merge land { owner: (unwrap! highest-bidder err-not-found) }))
+        (map-set user-balances { user: (get seller auction) }
+          { balance: (+ (default-to u0 (get balance (map-get? user-balances { user: (get seller auction) }))) (get current-bid auction)) }
+        )
+        (ok true)
+      )
+      (ok false)
+    )
+  )
+)
+
 (define-read-only (get-land-info (land-id uint))
   (map-get? lands { land-id: land-id })
 )
@@ -286,6 +381,11 @@
   {
     total-lands: (var-get land-id-nonce),
     total-leases: (var-get lease-id-nonce),
-    total-yield-tokens: (var-get yield-token-supply)
+    total-yield-tokens: (var-get yield-token-supply),
+    total-auctions: (var-get auction-id-nonce)
   }
+)
+
+(define-read-only (get-auction-info (auction-id uint))
+  (map-get? land-auctions { auction-id: auction-id })
 )
