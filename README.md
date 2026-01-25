@@ -19,6 +19,7 @@ This smart contract enables efficient land use optimization by managing:
 - Register agricultural land with solar capacity
 - Track location, size, and crop types
 - Monitor solar panel capacity in kW
+- Update land details (location, size, solar capacity, crop type)
 
 ### 📜 Smart Lease Agreements  
 - Create customizable lease terms
@@ -69,11 +70,20 @@ This smart contract enables efficient land use optimization by managing:
 
 ```clarity
 ;; Register your land
-(contract-call? .agrivoltaics register-land 
-  "Farm Location ABC" 
+(contract-call? .agrivoltaics register-land
+  "Farm Location ABC"
   u100    ;; 100 hectares
   u500    ;; 500 kW solar capacity
   "wheat" ;; crop type
+)
+
+;; Update land details
+(contract-call? .agrivoltaics update-land-details
+  u1          ;; land-id
+  "New Farm Location"
+  u120        ;; new size
+  u600        ;; new solar capacity
+  "corn"      ;; new crop type
 )
 
 ;; Create a lease agreement
@@ -161,6 +171,7 @@ This smart contract enables efficient land use optimization by managing:
 - `withdraw-balance` - Withdraw earned funds
 - `deposit-balance` - Add funds to account
 - `transfer-land-ownership` - Transfer land ownership to new principal
+- `update-land-details` - Update land information
 
 ### Read-Only Functions  
 - `get-land-info` - View land details

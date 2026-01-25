@@ -280,6 +280,25 @@
   )
 )
 
+(define-public (update-land-details (land-id uint) (new-location (string-ascii 100)) (new-size-hectares uint) (new-solar-capacity-kw uint) (new-crop-type (string-ascii 50)))
+  (let ((land (unwrap! (map-get? lands { land-id: land-id }) err-not-found)))
+    (asserts! (is-eq tx-sender (get owner land)) err-unauthorized)
+    (asserts! (> new-size-hectares u0) err-invalid-amount)
+    (asserts! (> new-solar-capacity-kw u0) err-invalid-amount)
+    (map-set lands { land-id: land-id }
+      (merge land
+        {
+          location: new-location,
+          size-hectares: new-size-hectares,
+          solar-capacity-kw: new-solar-capacity-kw,
+          crop-type: new-crop-type
+        }
+      )
+    )
+    (ok true)
+  )
+)
+
 (define-public (start-land-auction (land-id uint) (starting-price uint) (duration-blocks uint))
   (let
     (
